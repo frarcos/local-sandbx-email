@@ -54,7 +54,7 @@ const smtpServer = new SMTPServer({
 });
 
 smtpServer.listen(587, () => {
-	console.log('SMTPS server is running on port 465');
+	console.log('SMTPS server is running on port 587');
 });
 
 const bootstrapCDN = `
