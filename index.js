@@ -1,30 +1,16 @@
 const SMTPServer = require('smtp-server').SMTPServer;
 const { simpleParser } = require('mailparser');
 const express = require('express');
-const fs = require('fs');
 
 const app = express();
 const port = 3000;
 const receivedEmails = [];
 
-const options = {
-	key: fs.readFileSync('private.key'),
-	cert: fs.readFileSync('certificate.crt'),
-};
-
 const smtpServer = new SMTPServer({
 	secure: false,
-	port: 587,
+	port: 25,
 	banner: 'Welcome to My Secure SMTP Server',
-	key: options.key,
-	cert: options.cert,
-	onAuth(auth, session, callback) {
-		if (auth.username !== 'root' || auth.password !== 'root') {
-			return callback(new Error('Invalid username or password'));
-		}
-		console.log('auth', auth);
-		return callback(null, { user: 'root' });
-	},
+	disabledCommands: ['AUTH'],
 	onConnect(session, callback) {
 		console.log('Client connected:', session.remoteAddress);
 		callback();
@@ -53,8 +39,8 @@ const smtpServer = new SMTPServer({
 	},
 });
 
-smtpServer.listen(587, () => {
-	console.log('SMTPS server is running on port 587');
+smtpServer.listen(25, () => {
+	console.log('SMTPS server is running on port 25');
 });
 
 const bootstrapCDN = `

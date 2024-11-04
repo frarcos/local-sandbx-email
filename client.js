@@ -5,18 +5,10 @@ const fs = require('fs');
 // For self-signed certificates, you may want to use tls options
 const transporter = nodemailer.createTransport({
 	host: 'localhost',
-	port: 465, // Use port 465 for SSL
-	secure: true, // Use SSL
-	auth: {
-		user: 'abc',
-		pass: 'def',
-	},
+	port: 25, // Use port 465 for SSL
+	secure: false, // Use SSL
 	tls: {
-		// Accept self-signed certificates
-		rejectUnauthorized: false,
-		// If you have a certificate file, you can use:
-		// key: fs.readFileSync('path/to/private.key'),
-		// cert: fs.readFileSync('path/to/certificate.crt'),
+		rejectUnauthorized: false, // Allow self-signed certificates
 	},
 });
 
