@@ -1,1 +1,1 @@
-# local-sandbx-email
+# sandbx-email
