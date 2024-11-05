@@ -24,6 +24,13 @@ const smtpServer = new SMTPServer({
 				console.error('Error parsing email:', err);
 				return callback(err);
 			}
+
+			const attachments = (parsed.attachments || []).map((attachment) => ({
+				filename: attachment.filename,
+				contentType: attachment.contentType,
+				content: attachment.content,
+			}));
+
 			receivedEmails.push({
 				subject: parsed.subject,
 				from: parsed.from.text,
@@ -31,6 +38,7 @@ const smtpServer = new SMTPServer({
 				text: parsed.text,
 				html: parsed.html,
 				date: new Date(),
+				attachments,
 			});
 
 			console.log('Parsed Email:', parsed);
@@ -40,7 +48,7 @@ const smtpServer = new SMTPServer({
 });
 
 smtpServer.listen(25, () => {
-	console.log('SMTPS server is running on port 25');
+	console.log('SMTP server is running on port 25');
 });
 
 const bootstrapCDN = `
@@ -80,6 +88,24 @@ app.get('/email/:id', (req, res) => {
 	const emailId = parseInt(req.params.id);
 	if (emailId >= 0 && emailId < receivedEmails.length) {
 		const email = receivedEmails[emailId];
+
+		let attachmentList = '';
+		if (email.attachments.length > 0) {
+			attachmentList += '<h3>Attachments</h3><ul>';
+			email.attachments.forEach((attachment, index) => {
+				attachmentList += `
+					<li>
+						<a href="/email/${emailId}/attachment/${index}" target="_blank">
+							${attachment.filename || 'Unnamed Attachment'}
+						</a> (${attachment.contentType})
+					</li>
+				`;
+			});
+			attachmentList += '</ul>';
+		} else {
+			attachmentList = '<p>No attachments</p>';
+		}
+
 		res.send(`
             ${bootstrapCDN}
             <div class="container mt-5">
@@ -92,9 +118,34 @@ app.get('/email/:id', (req, res) => {
                 <p>${email.text}</p>
                 <h3>HTML Body</h3>
                 <div>${email.html}</div>
+                ${attachmentList}
                 <a href="/" class="btn btn-secondary mt-3">Back to Inbox</a>
             </div>
         `);
+	} else {
+		res.status(404).send('Email not found');
+	}
+});
+
+app.get('/email/:emailId/attachment/:attachmentId', (req, res) => {
+	const emailId = parseInt(req.params.emailId);
+	const attachmentId = parseInt(req.params.attachmentId);
+
+	if (emailId >= 0 && emailId < receivedEmails.length) {
+		const email = receivedEmails[emailId];
+
+		if (attachmentId >= 0 && attachmentId < email.attachments.length) {
+			const attachment = email.attachments[attachmentId];
+
+			res.setHeader(
+				'Content-Disposition',
+				`attachment; filename="${attachment.filename || 'attachment'}"`
+			);
+			res.setHeader('Content-Type', attachment.contentType);
+			res.send(attachment.content);
+		} else {
+			res.status(404).send('Attachment not found');
+		}
 	} else {
 		res.status(404).send('Email not found');
 	}
